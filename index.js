@@ -31,16 +31,7 @@ async function run(){
             console.log(category);
             res.send(category)
         })
-        // app.get('/category/:id' , async(req, res)=>{
-        //     const id = req.params.id;
-        //     console.log(id);
-        //    const query = {product_id : id}
-        //    const products = await brandsCollection.find(query)
-           
-        //    console.log(products);
-        //    res.send(products)   
-
-        // })
+        
 
         app.get('/brands/:id', async(req,res)=>{
             const id = req.params.id;
@@ -60,23 +51,37 @@ async function run(){
             res.send(products)
         })
         
-
+        // create user
         app.post("/users", async (req, res) => {
 			const user = req.body;
 			const result = await usersCollection.insertOne(user);
 			res.send(result);
 		});
 
+        // get user 
+        app.get('/users' , async(req,res) =>{
+            const query = {};
+            const users = await usersCollection.find(query).toArray()
+            res.send(users)
+        })
+
+        // // check role 
+        // app.get('/users/:email' , async(req,res) =>{
+        //     const email = req.params.email;
+        //     const query = {role : role}
+        //     const user = await usersCollection.findOne(query)
+        //     res.send(user)
+        // })
+
         // Save user email & generate JWT
     app.put('/user/:email', async (req, res) => {
         const email = req.params.email
         const user = req.body
-        const role = req.body
         const filter = { email: email }
         const options = { upsert: true }
         const updateDoc = {
           $set: user,
-          $set : role,
+          
         }
         const result = await usersCollection.updateOne(filter, updateDoc, options)
         console.log(result)
