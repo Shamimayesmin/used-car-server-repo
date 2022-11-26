@@ -128,11 +128,29 @@ async function run(){
 		});
 
         //add product collection create
-		app.post("/products", verifyJwt, verifyAdmin, async (req, res) => {
-			const doctor = req.body;
-			const result = await doctorsCollection.insertOne(doctor);
+		app.post("/products", async (req, res) => {
+			const product = req.body;
+			const result = await productsCollection.insertOne(product);
 			res.send(result);
 		});
+
+
+        // load all products data
+        app.get("/products", async (req, res) => {
+			const query = {};
+			const product = await productsCollection.find(query).toArray();
+			res.send(product);
+		});
+        
+        // add products name :
+		app.get("/productName", async (req, res) => {
+			const query = {};
+			const result = await categoryCollection.find(query).project({ brand: 1 }).toArray();
+            res.send(result);
+		
+		});
+
+        
     }
     finally{
 
