@@ -141,13 +141,59 @@ async function run(){
 			const product = await productsCollection.find(query).toArray();
 			res.send(product);
 		});
-        
+
         // add products name :
 		app.get("/productName", async (req, res) => {
 			const query = {};
 			const result = await categoryCollection.find(query).project({ brand: 1 }).toArray();
             res.send(result);
 		
+		});
+
+        // // load seller role 
+        // app.get('/users', async(req,res) =>{
+        //     const seller = req.body.seller;
+        //     const query = {role :seller }
+        //     const user = await usersCollection.find(query).toArray();
+		// 	res.send(user)
+        // })
+        app.get('/users/:role', async(req,res) =>{
+            const buyer = req.params.role;
+            const query = {role :buyer }
+            const user = await usersCollection.find(query).toArray()
+            console.log(user.role);
+			res.send(user)
+        })
+        app.get('/users/:role', async(req,res) =>{
+            const seller = req.params.role;
+            const query = {role :seller }
+            const user = await usersCollection.find(query).toArray()
+            console.log(user.role);
+			res.send(user)
+        })
+
+        // check admin
+		app.get("/users/admin/:email", async (req, res) => {
+			const email = req.params.email;
+			const query = { email };
+			const user = await usersCollection.findOne(query);
+			res.send({ isAdmin: user?.role === "admin" });
+		});
+
+        // delete buyer
+        app.delete("/users/:id", async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: ObjectId(id) };
+			const result = await usersCollection.deleteOne(filter);
+			res.send(result);
+		});
+
+        // payment for specific(id) booking
+		app.get("/bookings/:id", async (req, res) => {
+			const id = req.params.id;
+			const query = { _id: ObjectId(id) };
+			const booking = await bookingsCollection.findOne(query);
+			res.send(booking);
 		});
 
         
