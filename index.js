@@ -23,6 +23,7 @@ async function run(){
         const brandsCollection = client.db('used-carDb').collection('brands')
         const bookingsCollection = client.db('used-carDb').collection('bookings')
         const usersCollection = client.db('used-carDb').collection('users')
+        // const productsCollection = client.db("used-carDb").collection("products");
 
 
         // get category :
@@ -65,13 +66,7 @@ async function run(){
             res.send(users)
         })
 
-        // // check role 
-        // app.get('/users/:email' , async(req,res) =>{
-        //     const email = req.params.email;
-        //     const query = {role : role}
-        //     const user = await usersCollection.findOne(query)
-        //     res.send(user)
-        // })
+        
 
         // Save user email & generate JWT
     app.put('/user/:email', async (req, res) => {
@@ -97,6 +92,7 @@ async function run(){
 		app.post("/bookings", async (req, res) => {
 			const booking = req.body;
 			console.log(booking);
+            
 			// restiction on booking
 			// const query = {
 			// 	appointmentDate: booking.appointmentDate,
@@ -111,6 +107,30 @@ async function run(){
 
 			//-----------------------------
 			const result = await bookingsCollection.insertOne(booking);
+			res.send(result);
+		});
+
+        // get booking
+		app.get("/bookings",  async (req, res) => {
+           
+			const email = req.query.email;
+            
+			// // jwt verify
+			// const decodedEmail = req.decoded.email;
+
+			// if (email !== decodedEmail) {
+			// 	return res.status(403).send({ message: "forbidden access" });
+			// }
+
+			const query = { email: email };
+			const bookings = await bookingsCollection.find(query).toArray();
+			res.send(bookings);
+		});
+
+        //add product collection create
+		app.post("/products", verifyJwt, verifyAdmin, async (req, res) => {
+			const doctor = req.body;
+			const result = await doctorsCollection.insertOne(doctor);
 			res.send(result);
 		});
     }
