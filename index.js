@@ -1,24 +1,26 @@
-const express = require('express')
-const cors = require('cors')
-const jwt = require('jsonwebtoken')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-require('dotenv').config()
+const express = require("express");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+require("dotenv").config();
 
-const app = express()
-const port = process.env.PORT || 5000
+const app = express();
+const port = process.env.PORT || 5000;
 
 // stripe key
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // middlewares
-app.use(cors())
-app.use(express.json())
-
+app.use(cors());
+app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.ui8slz3.mongodb.net/?retryWrites=true&w=majority`;
 console.log(uri);
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
+const client = new MongoClient(uri, {
+	useNewUrlParser: true,
+	useUnifiedTopology: true,
+	serverApi: ServerApiVersion.v1,
+});
 
 // jwt function
 function verifyJwt(req, res, next) {
@@ -37,20 +39,19 @@ function verifyJwt(req, res, next) {
 	});
 }
 
-async function run(){
-    try{
-        const categoryCollection = client.db('used-carDb').collection('category')
-        const productsCollection = client.db('used-carDb').collection('products')
-        const brandsCollection = client.db('used-carDb').collection('brands')
-        const bookingsCollection = client.db('used-carDb').collection('bookings')
-        const usersCollection = client.db('used-carDb').collection('users')
-        
-        const paymentCollection = client.db("used-carDb").collection("payments");
+async function run() {
+	try {
+		const categoryCollection = client.db("used-carDb").collection("category");
+		const productsCollection = client.db("used-carDb").collection("products");
+		const brandsCollection = client.db("used-carDb").collection("brands");
+		const bookingsCollection = client.db("used-carDb").collection("bookings");
+		const usersCollection = client.db("used-carDb").collection("users");
 
+		const paymentCollection = client.db("used-carDb").collection("payments");
 
-        // verifyAdmin function
+		// verifyAdmin function
 
-        const verifyAdmin = async (req, res, next) => {
+		const verifyAdmin = async (req, res, next) => {
 			const decodedEmail = req.decoded.email;
 			const query = { email: decodedEmail };
 			const user = await usersCollection.findOne(query);
@@ -60,88 +61,84 @@ async function run(){
 			next();
 		};
 
-        // // jwt token
-		// app.get("/jwt", async (req, res) => {
-		// 	const email = req.query.email;
-		// 	const query = { email: email };
-		// 	const user = await usersCollection.findOne(query);
-		// 	if (user) {
-		// 		const token = jwt.sign({ email }, process.env.ACCESS_SECRET_TOKEN, {
-		// 			expiresIn: "1d",
-		// 		});
-		// 		return res.send({ accessToken: token });
-		// 	}
-		// 	// console.log(user);
-		// 	res.status(403).send({ accessToken: "" });
-		// });
+		// jwt token
+		app.get("/jwt", async (req, res) => {
+			const email = req.query.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			if (user) {
+				const token = jwt.sign({ email }, process.env.ACCESS_SECRET_TOKEN, {
+					expiresIn: "1d",
+				});
+				return res.send({ usedcarToken: token });
+			}
+			// console.log(user);
+			res.status(403).send({ usedcarToken: "" });
+		});
 
-        // get category :
-        app.get('/category' , async(req, res)=>{
-            const category = await categoryCollection.find().toArray()
-            console.log(category);
-            res.send(category)
-        })
-        
+		// get category :
+		app.get("/category", async (req, res) => {
+			const category = await categoryCollection.find().toArray();
+			console.log(category);
+			res.send(category);
+		});
 
-        app.get('/brands/:id', async(req,res)=>{
-            const id = req.params.id;
-            console.log(id);
-           const query = {product_id : id}
-           const products = await brandsCollection.find(query).toArray()
-           
-           console.log(products);
-           res.send(products)   
+		app.get("/brands/:id", async (req, res) => {
+			const id = req.params.id;
+			console.log(id);
+			const query = { product_id: id };
+			const products = await brandsCollection.find(query).toArray();
 
-        })
+			console.log(products);
+			res.send(products);
+		});
 
-        /// get all products 
-        app.get('/brands' , async(req, res)=>{
-            const products = await brandsCollection.find().toArray()
-            console.log(products);
-            res.send(products)
-        })
-        
-        // create user
-        app.post("/users", async (req, res) => {
+		/// get all products
+		app.get("/brands", async (req, res) => {
+			const products = await brandsCollection.find().toArray();
+			console.log(products);
+			res.send(products);
+		});
+
+		// create user
+		app.post("/users", async (req, res) => {
 			const user = req.body;
 			const result = await usersCollection.insertOne(user);
 			res.send(result);
 		});
 
-        // get user 
-        app.get('/users' , async(req,res) =>{
-            const query = {};
-            const users = await usersCollection.find(query).toArray()
-            res.send(users)
-        })
+		// get user
+		app.get("/users", async (req, res) => {
+			const query = {};
+			const users = await usersCollection.find(query).toArray();
+			res.send(users);
+		});
 
-        
+		// Save user email & generate JWT
+		// app.put('/user/:email', async (req, res) => {
+		//     const email = req.params.email
+		//     const user = req.body
+		//     const filter = { email: email }
+		//     const options = { upsert: true }
+		//     const updateDoc = {
+		//       $set: user,
 
-        // Save user email & generate JWT
-    app.put('/user/:email', async (req, res) => {
-        const email = req.params.email
-        const user = req.body
-        const filter = { email: email }
-        const options = { upsert: true }
-        const updateDoc = {
-          $set: user,
-          
-        }
-        const result = await usersCollection.updateOne(filter, updateDoc, options)
-        console.log(result)
-  
-        const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN, {
-          expiresIn: '1d',
-        })
-        console.log(token)
-        res.send({ result, token })
-      })
+		//     }
+		//     const result = await usersCollection.updateOne(filter, updateDoc, options)
+		//     console.log(result)
 
-        // booking api
+		//     const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN, {
+		//       expiresIn: '1d',
+		//     })
+		//     console.log(token)
+		//     res.send({ result, token })
+		//   })
+
+		// booking api
 		app.post("/bookings", async (req, res) => {
 			const booking = req.body;
 			console.log(booking);
-            
+
 			// restiction on booking
 			// const query = {
 			// 	appointmentDate: booking.appointmentDate,
@@ -159,11 +156,10 @@ async function run(){
 			res.send(result);
 		});
 
-        // get booking
-		app.get("/bookings",verifyJwt,  async (req, res) => {
-           
+		// get booking
+		app.get("/bookings", verifyJwt, async (req, res) => {
 			const email = req.query.email;
-            
+
 			// jwt verify
 			const decodedEmail = req.decoded.email;
 
@@ -176,46 +172,82 @@ async function run(){
 			res.send(bookings);
 		});
 
-        //add product collection create
+		//add product collection create
 		app.post("/products", async (req, res) => {
 			const product = req.body;
 			const result = await productsCollection.insertOne(product);
 			res.send(result);
 		});
 
-
-        // load all products data
-        app.get("/products", async (req, res) => {
+		// load all products data
+		app.get("/products", async (req, res) => {
 			const query = {};
 			const product = await productsCollection.find(query).toArray();
 			res.send(product);
 		});
 
-        // add products name :
+		// add products name :
 		app.get("/productName", async (req, res) => {
 			const query = {};
-			const result = await categoryCollection.find(query).project({ brand: 1 }).toArray();
-            res.send(result);
-		
+			const result = await categoryCollection
+				.find(query)
+				.project({ brand: 1 })
+				.toArray();
+			res.send(result);
 		});
 
-        
-        app.get('/users/:role', async(req,res) =>{
-            const buyer = req.params.role;
-            const query = {role :buyer }
-            const user = await usersCollection.find(query).toArray()
-            console.log(user.role);
-			res.send(user)
-        })
-        app.get('/users/:role', async(req,res) =>{
-            const seller = req.params.role;
-            const query = {role :seller }
-            const user = await usersCollection.find(query).toArray()
-            console.log(user.role);
-			res.send(user)
-        })
+		// user role
+		app.get("/users/:role", async (req, res) => {
+			const buyer = req.params.role;
+			const query = { role: buyer };
+			const user = await usersCollection.find(query).toArray();
+			console.log(user.role);
+			res.send(user);
+		});
+		app.get("/users/:role", async (req, res) => {
+			const seller = req.params.role;
+			const query = { role: seller };
+			const user = await usersCollection.find(query).toArray();
+			console.log(user.role);
+			res.send(user);
+		});
 
-        // check admin
+		// delete buyer and seller
+		app.delete("/users/:id", async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: ObjectId(id) };
+			const result = await usersCollection.deleteOne(filter);
+			res.send(result);
+		});
+
+		// update user :
+		app.put("/users/admin/:id", verifyJwt, async (req, res) => {
+			
+			//admin or not
+			const decodedEmail = req.decoded.email;
+			const query = {email : decodedEmail}
+			const user = await usersCollection.findOne(query)
+			if(user.role !== 'admin'){
+			    return res.status(403).send({message : 'forbidden access'})
+			}
+
+			const id = req.params.id;
+			const filter = { _id: ObjectId(id) };
+			const options = { upsert: true };
+			const updatedDoc = {
+				$set: {
+					role: "admin",
+				},
+			};
+			const result = await usersCollection.updateOne(
+				filter,
+				updatedDoc,
+				options
+			);
+			res.send(result);
+		});
+
+		// check admin
 		app.get("/users/admin/:email", async (req, res) => {
 			const email = req.params.email;
 			const query = { email };
@@ -223,15 +255,23 @@ async function run(){
 			res.send({ isAdmin: user?.role === "admin" });
 		});
 
-        // delete buyer
-        app.delete("/users/:id",verifyJwt, async (req, res) => {
-			const id = req.params.id;
-			const filter = { _id: ObjectId(id) };
-			const result = await usersCollection.deleteOne(filter);
-			res.send(result);
+		// check seller
+		app.get("/users/seller/:email", async (req, res) => {
+			const email = req.params.email;
+			const query = { email };
+			const user = await usersCollection.findOne(query);
+			res.send({ isSeller: user?.role === "seller" });
 		});
 
-        // payment for specific(id) booking
+		// check buyer
+		app.get("/users/buyer/:email", async (req, res) => {
+			const email = req.params.email;
+			const query = { email };
+			const user = await usersCollection.findOne(query);
+			res.send({ isBuyer: user?.role === "buyer" });
+		});
+
+		// payment for specific(id) booking
 		app.get("/bookings/:id", async (req, res) => {
 			const id = req.params.id;
 			const query = { _id: ObjectId(id) };
@@ -239,19 +279,17 @@ async function run(){
 			res.send(booking);
 		});
 
-        //payment api
+		//payment api
 		app.post("/create-payment-intent", async (req, res) => {
 			const booking = req.body;
-            const price = booking.price;
-            const amount = price * 100;
+			const price = booking.price;
+			const amount = price * 100;
 
 			// Create a PaymentIntent with the order amount and currency
 			const paymentIntent = await stripe.paymentIntents.create({
 				amount: amount,
 				currency: "usd",
-				"payment_method_types" : [
-                    "card"
-                ]
+				payment_method_types: ["card"],
 			});
 
 			res.send({
@@ -259,36 +297,34 @@ async function run(){
 			});
 		});
 
-        // payment post 
-        app.post('/payments', async(req, res) =>{
-            const payment = req.body;
-            const result = await paymentCollection.insertOne(payment);
-            const id = payment.bookingId 
-            const filter = {_id : ObjectId(id)}
-            const updatedDoc = {
-                $set : {
-                    paid : true,
-                    transactionId : payment.transactionId
-                }
-            }
-            const updateResult = await bookingsCollection.updateOne(filter, updatedDoc)
-            res.send(result)
-        })
-
-
-        
-    }
-    finally{
-
-    }
+		// payment post
+		app.post("/payments", async (req, res) => {
+			const payment = req.body;
+			const result = await paymentCollection.insertOne(payment);
+			const id = payment.bookingId;
+			const filter = { _id: ObjectId(id) };
+			const updatedDoc = {
+				$set: {
+					paid: true,
+					transactionId: payment.transactionId,
+				},
+			};
+			const updateResult = await bookingsCollection.updateOne(
+				filter,
+				updatedDoc
+			);
+			res.send(result);
+		});
+	} finally {
+	}
 }
 
-run().catch(err =>console.log(err))
+run().catch((err) => console.log(err));
 
-app.get('/' , (req,res) =>{
-    res.send(' used car Server is running...')
-})
+app.get("/", (req, res) => {
+	res.send(" used car Server is running...");
+});
 
 app.listen(port, () => {
-    console.log(`Car Server is running...on ${port}`)
-  })
+	console.log(`Car Server is running...on ${port}`);
+});
