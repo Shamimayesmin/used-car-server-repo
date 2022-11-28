@@ -124,16 +124,16 @@ async function run() {
 
 
 			// restiction on booking
-			// const query = {
+			const query = {
 				
-			// 	email: booking.email,
-			// 	productName: booking.productName,
-			// };
-			// const alreadyBooked = await bookingsCollection.find(query).toArray();
-			// if (alreadyBooked.length) {
-			// 	const message = `You already booked ${booking.productName}`;
-			// 	return res.send({ acknowledged: false, message });
-			// }
+				email: booking.email,
+				productName: booking.productName,
+			};
+			const alreadyBooked = await bookingsCollection.find(query).toArray();
+			if (alreadyBooked.length) {
+				const message = `You already booked ${booking.productName}`;
+				return res.send({ acknowledged: false, message });
+			}
 
 			//-----------------------------
 			const result = await bookingsCollection.insertOne(booking);
@@ -177,6 +177,14 @@ async function run() {
 				.find(query)
 				.project({ brand: 1 })
 				.toArray();
+			res.send(result);
+		});
+
+		// delete myproduct
+		app.delete("/products/:id", async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: ObjectId(id) };
+			const result = await productsCollection.deleteOne(filter);
 			res.send(result);
 		});
 
