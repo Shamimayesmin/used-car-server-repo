@@ -211,6 +211,13 @@ async function run() {
 			console.log(user.role);
 			res.send(user);
 		});
+		app.get("/users/:role", async (req, res) => {
+			const admin = req.params.role;
+			const query = { role: admin };
+			const user = await usersCollection.find(query).toArray();
+			console.log(user.role);
+			res.send(user);
+		});
 
 		// delete buyer and seller
 		app.delete("/users/:id", async (req, res) => {
@@ -273,7 +280,7 @@ async function run() {
 		});
 
 		// check buyer
-		app.get("/users/buyer/:email",verifyJwt, async (req, res) => {
+		app.get("/users/buyer/:email", async (req, res) => {
 			const email = req.params.email;
 			const query = { email };
 			const user = await usersCollection.findOne(query);
