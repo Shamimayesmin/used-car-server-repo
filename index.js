@@ -79,7 +79,7 @@ async function run() {
 		// get category :
 		app.get("/category", async (req, res) => {
 			const category = await categoryCollection.find().toArray();
-			console.log(category);
+			// console.log(category);
 			res.send(category);
 		});
 
@@ -141,13 +141,13 @@ async function run() {
 
 			// restiction on booking
 			// const query = {
-			// 	appointmentDate: booking.appointmentDate,
+				
 			// 	email: booking.email,
-			// 	treatment: booking.treatment,
+			// 	productName: booking.productName,
 			// };
 			// const alreadyBooked = await bookingsCollection.find(query).toArray();
 			// if (alreadyBooked.length) {
-			// 	const message = `You already booked ${booking.appointmentDate}`;
+			// 	const message = `You already booked ${booking.productName}`;
 			// 	return res.send({ acknowledged: false, message });
 			// }
 
@@ -219,15 +219,22 @@ async function run() {
 			const result = await usersCollection.deleteOne(filter);
 			res.send(result);
 		});
+		// delete myorder 
+		app.delete("/bookings/:id", async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: ObjectId(id) };
+			const result = await bookingsCollection.deleteOne(filter);
+			res.send(result);
+		});
 
 		// update user :
-		app.put("/users/admin/:id", verifyJwt, async (req, res) => {
+		app.put("/users/seller/:id", async (req, res) => {
 			
 			//admin or not
 			const decodedEmail = req.decoded.email;
 			const query = {email : decodedEmail}
 			const user = await usersCollection.findOne(query)
-			if(user.role !== 'admin'){
+			if(user.role === 'seller'){
 			    return res.status(403).send({message : 'forbidden access'})
 			}
 
@@ -236,7 +243,7 @@ async function run() {
 			const options = { upsert: true };
 			const updatedDoc = {
 				$set: {
-					role: "admin",
+					role: "seller",
 				},
 			};
 			const result = await usersCollection.updateOne(
@@ -246,6 +253,8 @@ async function run() {
 			);
 			res.send(result);
 		});
+
+
 
 		// check admin
 		app.get("/users/admin/:email", async (req, res) => {
@@ -264,7 +273,7 @@ async function run() {
 		});
 
 		// check buyer
-		app.get("/users/buyer/:email", async (req, res) => {
+		app.get("/users/buyer/:email",verifyJwt, async (req, res) => {
 			const email = req.params.email;
 			const query = { email };
 			const user = await usersCollection.findOne(query);
@@ -315,6 +324,23 @@ async function run() {
 			);
 			res.send(result);
 		});
+
+// // update verigy 
+//     app.patch('/users/seller/:id', async(req, res)=>{
+//         const id = req.params.id;
+//         const role = req.body.role;
+//         const query = {_id : ObjectId(id)}
+//         const updatedDoc = {
+//             $set : {
+//                 role : role
+//             }
+//         }
+//         const result = await usersCollection.updateOne(query, updatedDoc)
+//         res.send(result)
+//     })
+
+
+
 	} finally {
 	}
 }
