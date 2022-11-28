@@ -25,12 +25,14 @@ const client = new MongoClient(uri, {
 // jwt function
 function verifyJwt(req, res, next) {
 	const authHeader = req.headers.authorization;
+	console.log(authHeader);
 	if (!authHeader) {
 		return res.status(401).send("unauthorized access");
 	}
 	const token = authHeader.split(" ")[1];
 
 	jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, function (err, decoded) {
+		console.log({err,decoded});
 		if (err) {
 			return res.status(403).send({ message: "forbidden access" });
 		}
@@ -68,7 +70,7 @@ async function run() {
 			const user = await usersCollection.findOne(query);
 			if (user) {
 				const token = jwt.sign({ email }, process.env.ACCESS_SECRET_TOKEN, {
-					expiresIn: "1d",
+					expiresIn: "8d",
 				});
 				return res.send({ usedcarToken: token });
 			}
@@ -114,30 +116,12 @@ async function run() {
 			res.send(users);
 		});
 
-		// Save user email & generate JWT
-		// app.put('/user/:email', async (req, res) => {
-		//     const email = req.params.email
-		//     const user = req.body
-		//     const filter = { email: email }
-		//     const options = { upsert: true }
-		//     const updateDoc = {
-		//       $set: user,
-
-		//     }
-		//     const result = await usersCollection.updateOne(filter, updateDoc, options)
-		//     console.log(result)
-
-		//     const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN, {
-		//       expiresIn: '1d',
-		//     })
-		//     console.log(token)
-		//     res.send({ result, token })
-		//   })
 
 		// booking api
 		app.post("/bookings", async (req, res) => {
 			const booking = req.body;
 			console.log(booking);
+
 
 			// restiction on booking
 			// const query = {
@@ -162,7 +146,7 @@ async function run() {
 
 			// jwt verify
 			const decodedEmail = req.decoded.email;
-
+			console.log(decodedEmail,email);
 			if (email !== decodedEmail) {
 				return res.status(403).send({ message: "forbidden access" });
 			}
@@ -332,19 +316,7 @@ async function run() {
 			res.send(result);
 		});
 
-// // update verigy 
-//     app.patch('/users/seller/:id', async(req, res)=>{
-//         const id = req.params.id;
-//         const role = req.body.role;
-//         const query = {_id : ObjectId(id)}
-//         const updatedDoc = {
-//             $set : {
-//                 role : role
-//             }
-//         }
-//         const result = await usersCollection.updateOne(query, updatedDoc)
-//         res.send(result)
-//     })
+
 
 
 
