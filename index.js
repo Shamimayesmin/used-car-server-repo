@@ -195,7 +195,7 @@ async function run() {
                 advertise: "true",
                 status: 'available'
             }
-            const result = await productsCollection.find(query).toArray();
+            const result = await brandsCollection.find(query).toArray();
             res.send(result);
         })
 
