@@ -123,18 +123,18 @@ async function run() {
 			console.log(booking);
 
 
-			// restiction on booking
-			const query = {
+			// // restiction on booking
+			// const query = {
 				
-				email: booking.email,
-				productName: booking.productName,
-			};
-			const alreadyBooked = await bookingsCollection.find(query).toArray();
-			if (alreadyBooked.length) {
-				const message = `You already booked ${booking.productName}`;
-				return res.send({ acknowledged: false, message });
-			}
-
+			// 	email: booking.email,
+			// 	productName: booking.productName,
+			// };
+			// const alreadyBooked = await bookingsCollection.find(query).toArray();
+			// if (alreadyBooked.length) {
+			// 	const message = `You already booked ${booking.productName}`;
+			// 	return res.send({ acknowledged: false, message });
+			// }
+			
 			//-----------------------------
 			const result = await bookingsCollection.insertOne(booking);
 			res.send(result);
@@ -180,6 +180,7 @@ async function run() {
 			res.send(result);
 		});
 
+
 		// delete myproduct
 		app.delete("/products/:id", async (req, res) => {
 			const id = req.params.id;
@@ -188,6 +189,31 @@ async function run() {
 			res.send(result);
 		});
 
+		//get products with advertise field
+        app.get('/advertise', async (req, res) => {
+            const query = {
+                advertise: "true",
+                status: 'available'
+            }
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
+
+		//update field for advertise
+        app.put('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = {
+                _id: ObjectId(id)
+            }
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    advertise: "true"
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
 		// user role
 		app.get("/users/:role", async (req, res) => {
 			const buyer = req.params.role;
@@ -226,23 +252,52 @@ async function run() {
 			res.send(result);
 		});
 
-		// update user :
+
+		//get verified sellers
+        app.get('/verifiedSeller', async (req, res) => {
+            const email = req.query.email;
+            const query = {
+                verifyStatus: true,
+                email: email
+            }
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+        })
+
+		//update seller verification status
+        // app.put('/sellers/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const filter = {
+        //         _id: ObjectId(id)
+        //     }
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: {
+        //             verifyStatus: true
+        //         }
+        //     }
+        //     const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        //     res.send(result);
+        // })
+
+		// verify user :
 		app.put("/users/seller/:id", async (req, res) => {
 			
 			//admin or not
-			const decodedEmail = req.decoded.email;
-			const query = {email : decodedEmail}
-			const user = await usersCollection.findOne(query)
-			if(user.role === 'seller'){
-			    return res.status(403).send({message : 'forbidden access'})
-			}
+			// const decodedEmail = req.decoded.email;
+			// const query = {email : decodedEmail}
+			// const user = await usersCollection.findOne(query)
+			// if(user.role === 'seller'){
+			//     return res.status(403).send({message : 'forbidden access'})
+			// }
 
 			const id = req.params.id;
+			console.log(id);
 			const filter = { _id: ObjectId(id) };
 			const options = { upsert: true };
 			const updatedDoc = {
 				$set: {
-					role: "seller",
+					verifyStatus: true
 				},
 			};
 			const result = await usersCollection.updateOne(
